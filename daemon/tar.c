@@ -134,7 +134,7 @@ write_cb (void *fd_ptr, const void *buf, size_t len)
 /* Has one FileIn parameter. */
 /* Takes optional arguments, consult optargs_bitmask. */
 int
-do_tar_in (const char *dir, const char *compress, int xattrs, int selinux, int acls)
+do_tar_in (const char *dir, const char *compress, int xattrs, int selinux, int acls, int sparse)
 {
   const char *filter;
   int err, r;
@@ -174,6 +174,9 @@ do_tar_in (const char *dir, const char *compress, int xattrs, int selinux, int a
   if (!(optargs_bitmask & GUESTFS_TAR_IN_ACLS_BITMASK))
     acls = 0;
 
+  if (!(optargs_bitmask & GUESTFS_TAR_IN_SPARSE_BITMASK))
+    sparse = 0;
+
   fd = mkstemp (error_file);
   if (fd == -1) {
     err = errno;
@@ -186,13 +189,14 @@ do_tar_in (const char *dir, const char *compress, int xattrs, int selinux, int a
   close (fd);
 
   /* "tar -C /sysroot%s -xf -" but we have to quote the dir. */
-  if (asprintf_nowarn (&cmd, "%s -C %R%s -xf - %s%s%s%s2> %s",
+  if (asprintf_nowarn (&cmd, "%s -C %R%s -xf - %s%s%s%s%s2> %s",
                        str_tar,
                        dir, filter,
                        chown_supported ? "" : "--no-same-owner ",
                        xattrs ? "--xattrs " : "",
                        selinux ? "--selinux " : "",
                        acls ? "--acls " : "",
+                       sparse ? "--sparse " : "",
                        error_file) == -1) {
     err = errno;
     r = cancel_receive ();
@@ -257,7 +261,7 @@ int
 do_tgz_in (const char *dir)
 {
   optargs_bitmask = GUESTFS_TAR_IN_COMPRESS_BITMASK;
-  return do_tar_in (dir, "gzip", 0, 0, 0);
+  return do_tar_in (dir, "gzip", 0, 0, 0, 0);
 }
 
 /* Has one FileIn parameter. */
@@ -265,7 +269,7 @@ int
 do_txz_in (const char *dir)
 {
   optargs_bitmask = GUESTFS_TAR_IN_COMPRESS_BITMASK;
-  return do_tar_in (dir, "xz", 0, 0, 0);
+  return do_tar_in (dir, "xz", 0, 0, 0, 0);
 }
 
 /* Turn list 'excludes' into a temporary file, and return a string
@@ -328,7 +332,7 @@ make_exclude_from_file (char *const *excludes)
 /* Takes optional arguments, consult optargs_bitmask. */
 int
 do_tar_out (const char *dir, const char *compress, int numericowner,
-            char *const *excludes, int xattrs, int selinux, int acls)
+            char *const *excludes, int xattrs, int selinux, int acls, int sparse)
 {
   CLEANUP_FREE char *buf = NULL;
   struct stat statbuf;
@@ -381,6 +385,9 @@ do_tar_out (const char *dir, const char *compress, int numericowner,
   if (!(optargs_bitmask & GUESTFS_TAR_OUT_ACLS_BITMASK))
     acls = 0;
 
+  if (!(optargs_bitmask & GUESTFS_TAR_OUT_SPARSE_BITMASK))
+    sparse = 0;
+
   /* Check the filename exists and is a directory (RHBZ#908322). */
   buf = sysroot_path (dir);
   if (buf == NULL) {
@@ -399,7 +406,7 @@ do_tar_out (const char *dir, const char *compress, int numericowner,
   }
 
   /* "tar -C /sysroot%s -cf - ." but we have to quote the dir. */
-  if (asprintf_nowarn (&cmd, "%s -C %Q%s%s%s%s%s%s%s -cf - .",
+  if (asprintf_nowarn (&cmd, "%s -C %Q%s%s%s%s%s%s%s%s -cf - .",
                        str_tar,
                        buf, filter,
                        numericowner ? " --numeric-owner" : "",
@@ -407,7 +414,8 @@ do_tar_out (const char *dir, const char *compress, int numericowner,
                        exclude_from_file ? exclude_from_file : "",
                        xattrs ? " --xattrs" : "",
                        selinux ? " --selinux" : "",
-                       acls ? " --acls" : "") == -1) {
+                       acls ? " --acls" : "",
+                       sparse ? " --sparse" : "") == -1) {
     reply_with_perror ("asprintf");
     return -1;
   }
@@ -458,7 +466,7 @@ int
 do_tgz_out (const char *dir)
 {
   optargs_bitmask = GUESTFS_TAR_OUT_COMPRESS_BITMASK;
-  return do_tar_out (dir, "gzip", 0, NULL, 0, 0, 0);
+  return do_tar_out (dir, "gzip", 0, NULL, 0, 0, 0, 0);
 }
 
 /* Has one FileOut parameter. */
@@ -466,5 +474,5 @@ int
 do_txz_out (const char *dir)
 {
   optargs_bitmask = GUESTFS_TAR_OUT_COMPRESS_BITMASK;
-  return do_tar_out (dir, "xz", 0, NULL, 0, 0, 0);
+  return do_tar_out (dir, "xz", 0, NULL, 0, 0, 0, 0);
 }

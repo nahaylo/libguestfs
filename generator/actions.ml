@@ -5141,22 +5141,22 @@ To get the checksums for many files, use C<guestfs_checksums_out>." };
 
   { defaults with
     name = "tar_in"; added = (1, 0, 3);
-    style = RErr, [FileIn "tarfile"; Pathname "directory"], [OString "compress"; OBool "xattrs"; OBool "selinux"; OBool "acls"];
+    style = RErr, [FileIn "tarfile"; Pathname "directory"], [OString "compress"; OBool "xattrs"; OBool "selinux"; OBool "acls"; OBool "sparse"];
     proc_nr = Some 69;
     once_had_no_optargs = true;
     cancellable = true;
     tests = [
       InitScratchFS, Always, TestResultString (
         [["mkdir"; "/tar_in"];
-         ["tar_in"; "$srcdir/../../test-data/files/helloworld.tar"; "/tar_in"; "NOARG"; ""; ""; ""];
+         ["tar_in"; "$srcdir/../../test-data/files/helloworld.tar"; "/tar_in"; "NOARG"; ""; ""; ""; ""];
          ["cat"; "/tar_in/hello"]], "hello\n"), [];
       InitScratchFS, Always, TestResultString (
         [["mkdir"; "/tar_in_gz"];
-         ["tar_in"; "$srcdir/../../test-data/files/helloworld.tar.gz"; "/tar_in_gz"; "gzip"; ""; ""; ""];
+         ["tar_in"; "$srcdir/../../test-data/files/helloworld.tar.gz"; "/tar_in_gz"; "gzip"; ""; ""; ""; ""];
          ["cat"; "/tar_in_gz/hello"]], "hello\n"), [];
       InitScratchFS, IfAvailable "xz", TestResultString (
         [["mkdir"; "/tar_in_xz"];
-         ["tar_in"; "$srcdir/../../test-data/files/helloworld.tar.xz"; "/tar_in_xz"; "xz"; ""; ""; ""];
+         ["tar_in"; "$srcdir/../../test-data/files/helloworld.tar.xz"; "/tar_in_xz"; "xz"; ""; ""; ""; ""];
          ["cat"; "/tar_in_xz/hello"]], "hello\n"), []
     ];
     shortdesc = "unpack tarfile to directory";
@@ -5186,11 +5186,15 @@ If set to true, SELinux contexts are restored from the tar file.
 
 If set to true, POSIX ACLs are restored from the tar file.
 
+=item C<sparse>
+
+If set to true, handle sparse files efficiently.
+
 =back" };
 
   { defaults with
     name = "tar_out"; added = (1, 0, 3);
-    style = RErr, [String "directory"; FileOut "tarfile"], [OString "compress"; OBool "numericowner"; OStringList "excludes"; OBool "xattrs"; OBool "selinux"; OBool "acls"];
+    style = RErr, [String "directory"; FileOut "tarfile"], [OString "compress"; OBool "numericowner"; OStringList "excludes"; OBool "xattrs"; OBool "selinux"; OBool "acls"; OBool "sparse"];
     proc_nr = Some 70;
     once_had_no_optargs = true;
     cancellable = true;
@@ -5231,6 +5235,10 @@ If set to true, SELinux contexts are saved in the output tar.
 =item C<acls>
 
 If set to true, POSIX ACLs are saved in the output tar.
+
+=item C<sparse>
+
+If set to true, handle sparse files efficiently.
 
 =back" };
 
